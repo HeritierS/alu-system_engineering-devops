@@ -1,11 +1,27 @@
 #!/usr/bin/env bash
-# Install the load balancer
+#Configuration for haproxy load balancer
 
+apt-get update
+apt-get -y install haproxy
 
-sudo apt-get -y update
-sudo apt-get -y upgrade
-sudo apt-get -y install haproxy
-sudo sed -i 's/ENABLED=0/ENABLED=1/' /etc/default/haproxy
-sudo cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.original
-sudo sed -i "$ a\listen 5677-lb-01\n\tbind *:80\n\tmode http\n\tbalance roundrobin\n\toption httpclose\n\toption forwardfor\n\tserver 5677-web-02 100.25.213.47:80 check\n\tserver 5677-web-01 3.80.64.75:80 check" /etc/haproxy/haproxy.cfg
-sudo service haproxy start
+BACKEND_CONFIG=\
+"
+backend allServers
+	timeout connect 10s
+	timeout server  10s
+	balance roundrobin
+	mode http
+	server 5790-web-01 18.234.238.225:80 check
+	server 5790-web-02 54.174.65.83:80 check
+"
+FRONTEND_CONFIG=\
+"
+frontend www
+	mode http
+	timeout client 10s
+	bind *:80
+	default_backend allServers
+"
+echo -e "$FRONTEND_CONFIG" >> /etc/haproxy/haproxy.cfg
+echo -e "$BACKEND_CONFIG" >> /etc/haproxy/haproxy.cfg
+service haproxy restart
